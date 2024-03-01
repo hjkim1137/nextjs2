@@ -53,3 +53,7 @@
 .actions button[type='button']:hover {
   color: #d1bee6;
 }
+
+textarea {
+  resize: none;
+}
