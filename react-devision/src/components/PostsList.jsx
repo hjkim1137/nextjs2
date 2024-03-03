@@ -1,38 +1,55 @@
 import Post from './Post';
 import styles from './PostsList.module.css';
 import NewPost from './NewPost';
-import { useState } from 'react';
 import Modal from './Modal';
+import { useEffect, useState } from 'react';
 
 function PostsList({ isPosting, onStopPosting }) {
-  const [enteredBody, setEnteredBody] = useState('');
-  const [enteredAuthor, setEnteredAuthor] = useState('');
+  const [posts, setPosts] = useState([]);
 
-  // 상태를 변화시키는 함수
-  function bodyChangeHandler(event) {
-    setEnteredBody(event.target.value);
-  }
+  useEffect(() => {
+    async function fetchPost() {
+      const response = await fetch('http://localhost:9999/posts');
+      const resData = await response.json();
+      console.log('resData', resData);
+      setPosts(resData);
+    }
+    fetchPost();
+  }, []);
 
-  function authorChangeHandler(event) {
-    setEnteredAuthor(event.target.value);
+  function addPostHandler(postData) {
+    fetch('http://localhost:9999/posts', {
+      method: 'POST',
+      body: JSON.stringify(postData),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    setPosts((prev) => [postData, ...prev]);
   }
 
   return (
     <>
+      {/* isPosting이 true 이면 */}
       {isPosting && (
         <Modal onClose={onStopPosting}>
-          <NewPost
-            // 함수를 실행시키는게 아니라 속성의 "값으로" 함수를 넘긴다
-            onBodyChange={bodyChangeHandler}
-            onAuthorChange={authorChangeHandler}
-          />
+          <NewPost onCancel={onStopPosting} onAddPost={addPostHandler} />
         </Modal>
       )}
-
-      <ul className={styles.posts}>
-        <Post author={enteredAuthor} body={enteredBody} />
-        <Post author="Manuel" body="Check out the full course!" />
-      </ul>
+      {/* NewPost에서 입력한 내용이 보여지는 공간 */}
+      {/* 순수 자바스크립트 객체 posts를 JSX로 변환 */}
+      {posts ? (
+        <ul className={styles.posts}>
+          {posts.map((post) => (
+            <Post key={post.body} author={post.author} body={post.body} />
+          ))}
+        </ul>
+      ) : (
+        <div style={{ textAlign: 'center', color: 'white' }}>
+          <h2>There are no posts yet..</h2>
+          <p>Start adding some!</p>
+        </div>
+      )}
     </>
   );
 }
